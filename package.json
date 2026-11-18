@@ -1,7 +1,7 @@
 {
   "name": "shinzu-meet",
   "version": "1.0.0",
-  "private": true,
+  "type": "module",
   "dependencies": {
     "livekit-server-sdk": "^2.9.0"
   }
