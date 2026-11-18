@@ -48,8 +48,9 @@ function showError(msg) {
   setTimeout(() => landingError.classList.add('hidden'), 5000);
 }
 
+// PALITAN ANG URL PARA SA VERCEL
 async function fetchToken(roomName, participantName) {
-  const res = await fetch('/.netlify/functions/token', {
+  const res = await fetch('/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ roomName, participantName })
@@ -324,7 +325,8 @@ randomMatchBtn.addEventListener('click', async () => {
   showScreen(searchingScreen);
 
   try {
-    const res = await fetch('/.netlify/functions/token', {
+    // PALITAN ANG URL PARA SA VERCEL
+    const res = await fetch('/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'randomMatch', participantName: name })
