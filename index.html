@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#000000" />
   <title>SHINZU MEET</title>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css" />
   <!-- LiveKit Client SDK -->
   <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
 </head>
 <body>
-  <!-- ========== LANDING SCREEN ========== -->
+  <!-- LANDING SCREEN -->
   <div id="landingScreen" class="screen active">
     <div class="landing-container">
       <h1 class="logo">SHINZU<span>MEET</span></h1>
@@ -37,7 +39,7 @@
     </div>
   </div>
 
-  <!-- ========== SEARCHING SCREEN ========== -->
+  <!-- SEARCHING SCREEN -->
   <div id="searchingScreen" class="screen">
     <div class="searching-container">
       <div class="spinner"></div>
@@ -47,7 +49,7 @@
     </div>
   </div>
 
-  <!-- ========== CALL SCREEN ========== -->
+  <!-- CALL SCREEN -->
   <div id="callScreen" class="screen">
     <header class="call-header">
       <div class="call-info">
@@ -60,10 +62,8 @@
       </div>
     </header>
 
-    <!-- Video Grid -->
     <div id="videoGrid" class="video-grid"></div>
 
-    <!-- Chat Panel -->
     <aside id="chatPanel" class="chat-panel hidden">
       <div class="chat-header">
         <h3>Chat</h3>
@@ -76,7 +76,6 @@
       </form>
     </aside>
 
-    <!-- Controls -->
     <footer class="call-controls">
       <button id="micToggleBtn" class="control-btn" title="Toggle microphone">🎤</button>
       <button id="camToggleBtn" class="control-btn" title="Toggle camera">📷</button>
@@ -86,7 +85,6 @@
     </footer>
   </div>
 
-  <!-- ========== PRIVACY MODAL ========== -->
   <div id="privacyModal" class="modal hidden">
     <div class="modal-content">
       <h2>Privacy Policy</h2>
@@ -96,5 +94,13 @@
   </div>
 
   <script src="script.js"></script>
+  <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('PWA Ready!'))
+        .catch(err => console.log('PWA Error', err));
+    }
+  </script>
 </body>
 </html>
