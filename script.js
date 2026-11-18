@@ -1,7 +1,3 @@
-/* ============================================================
-   SHINZU MEET – Frontend Logic (Camera Fix Update)
-   ============================================================ */
-
 const landingScreen = document.getElementById('landingScreen');
 const searchingScreen = document.getElementById('searchingScreen');
 const callScreen = document.getElementById('callScreen');
@@ -86,13 +82,11 @@ async function connectToRoom(roomName, participantName) {
     await room.connect(url, token);
     localParticipant = room.localParticipant;
     
-    // Dito natin bubuksan ang camera at mic (mag-trigger ng browser prompt)
     await localParticipant.enableCameraAndMicrophone();
 
     showScreen(callScreen);
     roomLabel.textContent = roomName;
     
-    // I-render agad
     renderAllParticipants();
 
   } catch (err) {
@@ -118,7 +112,7 @@ function addParticipantTile(participant, isLocal) {
   const videoEl = document.createElement('video');
   videoEl.autoplay = true;
   videoEl.playsInline = true; 
-  videoEl.muted = isLocal; // I-mute ang sarili para walang echo
+  videoEl.muted = isLocal;
 
   const overlay = document.createElement('div');
   overlay.className = 'tile-overlay';
@@ -137,7 +131,7 @@ function addParticipantTile(participant, isLocal) {
   const videoPub = participant.getTrackPublication(LivekitClient.Track.Source.Camera);
   if (videoPub?.videoTrack) {
     videoPub.videoTrack.attach(videoEl);
-    videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX: Pilitin mag-play
+    videoEl.play().catch(e => console.log("Auto-play blocked:", e));
   } else {
     showAvatarFallback(tile, participant);
   }
@@ -148,7 +142,7 @@ function addParticipantTile(participant, isLocal) {
     const pub = participant.getTrackPublication(LivekitClient.Track.Source.Camera);
     if (pub?.videoTrack) {
       pub.videoTrack.attach(videoEl);
-      videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX
+      videoEl.play().catch(e => console.log("Auto-play blocked:", e));
       removeAvatarFallback(tile);
     }
   });
@@ -205,7 +199,7 @@ function onTrackSubscribed(track, pub, participant) {
   if (track.kind === 'video') {
     const videoEl = tile.querySelector('video');
     track.attach(videoEl);
-    videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX
+    videoEl.play().catch(e => console.log("Auto-play blocked:", e));
     removeAvatarFallback(tile);
   }
   if (track.kind === 'audio') {
@@ -362,136 +356,6 @@ joinRoomBtn.addEventListener('click', () => {
 
 cancelSearchBtn.addEventListener('click', () => showScreen(landingScreen));
 
-privacyLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  privacyModal.classList.remove('hidden');
-});
-closePrivacyBtn.addEventListener('click', () => privacyModal.classList.add('hidden'));
-
-window.addEventListener('beforeunload', () => {
-  if (room) {
-    room.localParticipant?.unpublishAll?.();
-    room.disconnect();
-  }
-}); = new TextEncoder();
-  await room.localParticipant.publishData(encoder.encode(text), { reliable: true });
-  appendChatMessage(localParticipant.name || 'You', text);
-  chatInput.value = '';
-});
-
-// ============================================================
-// 7. CONTROLS
-// ============================================================
-micToggleBtn.addEventListener('click', async () => {
-  if (!localParticipant) return;
-  micEnabled = !micEnabled;
-  await localParticipant.setMicrophoneEnabled(micEnabled);
-  micToggleBtn.classList.toggle('active', !micEnabled);
-  micToggleBtn.textContent = micEnabled ? '🎤' : '🔇';
-});
-
-camToggleBtn.addEventListener('click', async () => {
-  if (!localParticipant) return;
-  camEnabled = !camEnabled;
-  await localParticipant.setCameraEnabled(camEnabled);
-  camToggleBtn.classList.toggle('active', !camEnabled);
-  camToggleBtn.textContent = camEnabled ? '📷' : '📷❌';
-});
-
-switchCameraBtn.addEventListener('click', async () => {
-  if (!localParticipant) return;
-  try {
-    const pub = localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
-    if (!pub?.videoTrack) return;
-    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
-    await pub.videoTrack.restartTrack({ facingMode: currentFacingMode });
-  } catch (err) {
-    console.warn('Camera switch not supported:', err);
-  }
-});
-
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen?.().catch(() => {});
-  } else {
-    document.exitFullscreen?.();
-  }
-});
-
-leaveBtn.addEventListener('click', cleanupAndReturnHome);
-
-function cleanupAndReturnHome() {
-  if (room) {
-    room.localParticipant?.unpublishAll?.();
-    room.disconnect();
-    room = null;
-  }
-  localParticipant = null;
-  videoGrid.innerHTML = '';
-  chatMessages.innerHTML = '';
-  chatPanel.classList.add('hidden');
-  showScreen(landingScreen);
-}
-
-// ============================================================
-// 8. UI TOGGLES
-// ============================================================
-toggleChatBtn.addEventListener('click', () => chatPanel.classList.toggle('hidden'));
-closeChatBtn.addEventListener('click', () => chatPanel.classList.add('hidden'));
-
-copyRoomLinkBtn.addEventListener('click', () => {
-  const link = `${location.origin}?room=${roomLabel.textContent}`;
-  navigator.clipboard.writeText(link).then(() => {
-    copyRoomLinkBtn.textContent = '✅';
-    setTimeout(() => copyRoomLinkBtn.textContent = '🔗', 2000);
-  }).catch(() => prompt('Copy this link:', link));
-});
-
-// ============================================================
-// 9. LANDING ACTIONS
-// ============================================================
-randomMatchBtn.addEventListener('click', async () => {
-  const name = displayNameInput.value.trim();
-  if (!name) return showError('Please enter your name first.');
-
-  showScreen(searchingScreen);
-
-  try {
-    const res = await fetch('/.netlify/functions/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'randomMatch', participantName: name })
-    });
-    if (!res.ok) throw new Error('Matching failed');
-    const { roomName } = await res.json();
-    await connectToRoom(roomName, name);
-  } catch (err) {
-    showScreen(landingScreen);
-    showError('Could not find a match. Try again.');
-  }
-});
-
-createRoomBtn.addEventListener('click', () => {
-  const name = displayNameInput.value.trim();
-  if (!name) return showError('Please enter your name first.');
-  const roomCode = crypto.randomUUID().slice(0, 8).toUpperCase();
-  roomCodeInput.value = roomCode;
-  connectToRoom(roomCode, name);
-});
-
-joinRoomBtn.addEventListener('click', () => {
-  const name = displayNameInput.value.trim();
-  const code = roomCodeInput.value.trim();
-  if (!name) return showError('Please enter your name first.');
-  if (!code) return showError('Please enter a room code.');
-  connectToRoom(code, name);
-});
-
-cancelSearchBtn.addEventListener('click', () => showScreen(landingScreen));
-
-// ============================================================
-// 10. MODALS & UNLOAD
-// ============================================================
 privacyLink.addEventListener('click', (e) => {
   e.preventDefault();
   privacyModal.classList.remove('hidden');
