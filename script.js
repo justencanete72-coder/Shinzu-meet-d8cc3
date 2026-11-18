@@ -1,8 +1,7 @@
 /* ============================================================
-   SHINZU MEET – Frontend Logic
+   SHINZU MEET – Frontend Logic (Camera Fix Update)
    ============================================================ */
 
-// DOM refs
 const landingScreen = document.getElementById('landingScreen');
 const searchingScreen = document.getElementById('searchingScreen');
 const callScreen = document.getElementById('callScreen');
@@ -36,16 +35,12 @@ const privacyLink = document.getElementById('privacyLink');
 const privacyModal = document.getElementById('privacyModal');
 const closePrivacyBtn = document.getElementById('closePrivacyBtn');
 
-// State
 let room = null;
 let localParticipant = null;
 let currentFacingMode = 'user'; 
 let micEnabled = true;
 let camEnabled = true;
 
-// ============================================================
-// 1. SCREEN NAVIGATION
-// ============================================================
 function showScreen(screen) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   screen.classList.add('active');
@@ -57,9 +52,6 @@ function showError(msg) {
   setTimeout(() => landingError.classList.add('hidden'), 5000);
 }
 
-// ============================================================
-// 2. TOKEN FETCH (Netlify Function)
-// ============================================================
 async function fetchToken(roomName, participantName) {
   const res = await fetch('/.netlify/functions/token', {
     method: 'POST',
@@ -70,16 +62,12 @@ async function fetchToken(roomName, participantName) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed to get token');
   }
-  return res.json(); // { token, url }
+  return res.json(); 
 }
 
-// ============================================================
-// 3. CONNECT TO LIVEKIT ROOM
-// ============================================================
 async function connectToRoom(roomName, participantName) {
   try {
     showScreen(searchingScreen);
-
     const { token, url } = await fetchToken(roomName, participantName);
 
     room = new LivekitClient.Room({
@@ -87,7 +75,6 @@ async function connectToRoom(roomName, participantName) {
       dynacast: true, 
     });
 
-    // Event listeners
     room.on(LivekitClient.RoomEvent.ParticipantConnected, onParticipantConnected);
     room.on(LivekitClient.RoomEvent.ParticipantDisconnected, onParticipantDisconnected);
     room.on(LivekitClient.RoomEvent.TrackSubscribed, onTrackSubscribed);
@@ -96,14 +83,16 @@ async function connectToRoom(roomName, participantName) {
     room.on(LivekitClient.RoomEvent.Disconnected, cleanupAndReturnHome);
     room.on(LivekitClient.RoomEvent.DataReceived, onDataReceived);
 
-    // Dito nag-trigger ang permission prompt ng browser
     await room.connect(url, token);
     localParticipant = room.localParticipant;
+    
+    // Dito natin bubuksan ang camera at mic (mag-trigger ng browser prompt)
     await localParticipant.enableCameraAndMicrophone();
 
-    // Initial render
     showScreen(callScreen);
     roomLabel.textContent = roomName;
+    
+    // I-render agad
     renderAllParticipants();
 
   } catch (err) {
@@ -113,9 +102,6 @@ async function connectToRoom(roomName, participantName) {
   }
 }
 
-// ============================================================
-// 4. RENDER PARTICIPANTS (VIDEO GRID)
-// ============================================================
 function renderAllParticipants() {
   if (!room) return;
   videoGrid.innerHTML = '';
@@ -131,8 +117,8 @@ function addParticipantTile(participant, isLocal) {
 
   const videoEl = document.createElement('video');
   videoEl.autoplay = true;
-  videoEl.playsInline = true;
-  videoEl.muted = isLocal;
+  videoEl.playsInline = true; 
+  videoEl.muted = isLocal; // I-mute ang sarili para walang echo
 
   const overlay = document.createElement('div');
   overlay.className = 'tile-overlay';
@@ -151,6 +137,7 @@ function addParticipantTile(participant, isLocal) {
   const videoPub = participant.getTrackPublication(LivekitClient.Track.Source.Camera);
   if (videoPub?.videoTrack) {
     videoPub.videoTrack.attach(videoEl);
+    videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX: Pilitin mag-play
   } else {
     showAvatarFallback(tile, participant);
   }
@@ -161,6 +148,7 @@ function addParticipantTile(participant, isLocal) {
     const pub = participant.getTrackPublication(LivekitClient.Track.Source.Camera);
     if (pub?.videoTrack) {
       pub.videoTrack.attach(videoEl);
+      videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX
       removeAvatarFallback(tile);
     }
   });
@@ -200,9 +188,6 @@ function updateParticipantCount() {
   videoGrid.dataset.count = total;
 }
 
-// ============================================================
-// 5. EVENT HANDLERS
-// ============================================================
 function onParticipantConnected(participant) {
   addParticipantTile(participant, false);
   updateParticipantCount();
@@ -220,6 +205,7 @@ function onTrackSubscribed(track, pub, participant) {
   if (track.kind === 'video') {
     const videoEl = tile.querySelector('video');
     track.attach(videoEl);
+    videoEl.play().catch(e => console.log("Auto-play blocked:", e)); // <--- FIX
     removeAvatarFallback(tile);
   }
   if (track.kind === 'audio') {
@@ -246,9 +232,6 @@ function onDataReceived(payload, participant) {
   appendChatMessage(participant?.name || 'Unknown', msg);
 }
 
-// ============================================================
-// 6. CHAT
-// ============================================================
 function appendChatMessage(author, text) {
   const msgEl = document.createElement('div');
   msgEl.className = 'chat-msg';
@@ -273,6 +256,124 @@ chatForm.addEventListener('submit', async (e) => {
   const text = chatInput.value.trim();
   if (!text || !room) return;
   const encoder = new TextEncoder();
+  await room.localParticipant.publishData(encoder.encode(text), { reliable: true });
+  appendChatMessage(localParticipant.name || 'You', text);
+  chatInput.value = '';
+});
+
+micToggleBtn.addEventListener('click', async () => {
+  if (!localParticipant) return;
+  micEnabled = !micEnabled;
+  await localParticipant.setMicrophoneEnabled(micEnabled);
+  micToggleBtn.classList.toggle('active', !micEnabled);
+  micToggleBtn.textContent = micEnabled ? '🎤' : '🔇';
+});
+
+camToggleBtn.addEventListener('click', async () => {
+  if (!localParticipant) return;
+  camEnabled = !camEnabled;
+  await localParticipant.setCameraEnabled(camEnabled);
+  camToggleBtn.classList.toggle('active', !camEnabled);
+  camToggleBtn.textContent = camEnabled ? '📷' : '📷❌';
+});
+
+switchCameraBtn.addEventListener('click', async () => {
+  if (!localParticipant) return;
+  try {
+    const pub = localParticipant.getTrackPublication(LivekitClient.Track.Source.Camera);
+    if (!pub?.videoTrack) return;
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    await pub.videoTrack.restartTrack({ facingMode: currentFacingMode });
+  } catch (err) {
+    console.warn('Camera switch not supported:', err);
+  }
+});
+
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.().catch(() => {});
+  } else {
+    document.exitFullscreen?.();
+  }
+});
+
+leaveBtn.addEventListener('click', cleanupAndReturnHome);
+
+function cleanupAndReturnHome() {
+  if (room) {
+    room.localParticipant?.unpublishAll?.();
+    room.disconnect();
+    room = null;
+  }
+  localParticipant = null;
+  videoGrid.innerHTML = '';
+  chatMessages.innerHTML = '';
+  chatPanel.classList.add('hidden');
+  showScreen(landingScreen);
+}
+
+toggleChatBtn.addEventListener('click', () => chatPanel.classList.toggle('hidden'));
+closeChatBtn.addEventListener('click', () => chatPanel.classList.add('hidden'));
+
+copyRoomLinkBtn.addEventListener('click', () => {
+  const link = `${location.origin}?room=${roomLabel.textContent}`;
+  navigator.clipboard.writeText(link).then(() => {
+    copyRoomLinkBtn.textContent = '✅';
+    setTimeout(() => copyRoomLinkBtn.textContent = '🔗', 2000);
+  }).catch(() => prompt('Copy this link:', link));
+});
+
+randomMatchBtn.addEventListener('click', async () => {
+  const name = displayNameInput.value.trim();
+  if (!name) return showError('Please enter your name first.');
+
+  showScreen(searchingScreen);
+
+  try {
+    const res = await fetch('/.netlify/functions/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'randomMatch', participantName: name })
+    });
+    if (!res.ok) throw new Error('Matching failed');
+    const { roomName } = await res.json();
+    await connectToRoom(roomName, name);
+  } catch (err) {
+    showScreen(landingScreen);
+    showError('Could not find a match. Try again.');
+  }
+});
+
+createRoomBtn.addEventListener('click', () => {
+  const name = displayNameInput.value.trim();
+  if (!name) return showError('Please enter your name first.');
+  const roomCode = crypto.randomUUID().slice(0, 8).toUpperCase();
+  roomCodeInput.value = roomCode;
+  connectToRoom(roomCode, name);
+});
+
+joinRoomBtn.addEventListener('click', () => {
+  const name = displayNameInput.value.trim();
+  const code = roomCodeInput.value.trim();
+  if (!name) return showError('Please enter your name first.');
+  if (!code) return showError('Please enter a room code.');
+  connectToRoom(code, name);
+});
+
+cancelSearchBtn.addEventListener('click', () => showScreen(landingScreen));
+
+privacyLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  privacyModal.classList.remove('hidden');
+});
+closePrivacyBtn.addEventListener('click', () => privacyModal.classList.add('hidden'));
+
+window.addEventListener('beforeunload', () => {
+  if (room) {
+    room.localParticipant?.unpublishAll?.();
+    room.disconnect();
+  }
+}); = new TextEncoder();
   await room.localParticipant.publishData(encoder.encode(text), { reliable: true });
   appendChatMessage(localParticipant.name || 'You', text);
   chatInput.value = '';
