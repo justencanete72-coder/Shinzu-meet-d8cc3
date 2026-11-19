@@ -1,106 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#000000" />
-  <title>SHINZU MEET</title>
-  <!-- PWA Manifest -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>SHINZU PERFORMANCE Z</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="style.css" />
-  <!-- LiveKit Client SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- LANDING SCREEN -->
-  <div id="landingScreen" class="screen active">
-    <div class="landing-container">
-      <h1 class="logo">SHINZU<span>MEET</span></h1>
-      <p class="tagline">Random group video calls. Up to 10 people.</p>
 
-      <div class="name-input-group">
-        <label for="displayName">Your name</label>
-        <input type="text" id="displayName" placeholder="Enter your name" maxlength="20" autocomplete="off" />
+  <!-- INTRO ANIMATION OVERLAY -->
+  <div id="intro-screen">
+    <h1 class="intro-logo">SHINZU <span>Z</span></h1>
+    <div class="intro-loader"></div>
+  </div>
+
+  <!-- TOP HEADER -->
+  <header class="app-header">
+    <div class="logo">SHINZU <span>Z</span></div>
+    <div id="battery-status" class="battery-pill">Battery: --%</div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main id="app-content">
+    
+    <!-- HOME TAB -->
+    <section id="tab-home" class="tab-pane active">
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h1>PERFORMANCE Z</h1>
+          <p>Maximize your mobile gaming potential.</p>
+        </div>
       </div>
 
-      <button id="randomMatchBtn" class="btn btn-primary btn-large">🎲 Random Match</button>
-      <div class="divider"><span>or</span></div>
-      <button id="createRoomBtn" class="btn btn-secondary">➕ Create Private Room</button>
-
-      <div class="join-room-group">
-        <input type="text" id="roomCodeInput" placeholder="Enter room code" maxlength="36" />
-        <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+      <div class="section-title">Device Information</div>
+      <div class="grid-2">
+        <div class="card info-card">
+          <span class="label">Device Model</span>
+          <span class="value" id="dev-brand">Detecting...</span>
+        </div>
+        <div class="card info-card">
+          <span class="label">OS Version</span>
+          <span class="value" id="dev-os">Detecting...</span>
+        </div>
+        <div class="card info-card">
+          <span class="label">Screen Res</span>
+          <span class="value" id="dev-res">Detecting...</span>
+        </div>
+        <div class="card info-card">
+          <span class="label">RAM (Approx)</span>
+          <span class="value" id="dev-ram">Detecting...</span>
+        </div>
+        <div class="card info-card">
+          <span class="label">Storage Free</span>
+          <span class="value" id="dev-storage">Detecting...</span>
+        </div>
+        <div class="card info-card">
+          <span class="label">Network Type</span>
+          <span class="value" id="dev-network">Detecting...</span>
+        </div>
       </div>
 
-      <div id="landingError" class="error-msg hidden"></div>
-      <footer class="landing-footer">
-        <p>By using SHINZU MEET you agree to our <a href="#" id="privacyLink">Privacy Policy</a>.</p>
-      </footer>
+      <div class="section-title">Quick Actions</div>
+      <button class="btn btn-primary" id="btn-quick-opt">Run Quick Optimization</button>
+    </section>
+
+    <!-- PERFORMANCE TAB -->
+    <section id="tab-performance" class="tab-pane">
+      <div class="section-title">Live Performance Monitor</div>
+      <div class="card fps-card">
+        <div class="fps-circle">
+          <span id="fps-value">0</span>
+          <small>FPS</small>
+        </div>
+        <p>Real-time frame rate test.</p>
+        <button class="btn btn-outline" id="btn-toggle-fps">Start Test</button>
+      </div>
+
+      <div class="section-title">Hardware & Render Info</div>
+      <div class="card info-list">
+        <div class="list-item"><span>Render API (GPU)</span> <strong id="mon-gpu" style="font-size:0.8rem; text-align:right; max-width:60%;">Detecting...</strong></div>
+        <div class="list-item"><span>Battery Level</span> <strong id="mon-battery">--</strong></div>
+        <div class="list-item"><span>Charging Status</span> <strong id="mon-charging">--</strong></div>
+        <div class="list-item"><span>Network Downlink</span> <strong id="mon-downlink">--</strong></div>
+      </div>
+
+      <div class="section-title">Optimization Profiles</div>
+      <div class="card">
+        <div class="slider-group">
+          <label>Target FPS <span id="val-fps">60</span></label>
+          <input type="range" id="slider-fps" min="30" max="120" step="30" value="60">
+        </div>
+        <div class="slider-group">
+          <label>Touch Sensitivity <span id="val-touch">Medium</span></label>
+          <input type="range" id="slider-touch" min="1" max="3" step="1" value="2">
+        </div>
+        <p class="disclaimer">Note: These are recommended settings. A web app cannot directly alter hardware limits.</p>
+      </div>
+    </section>
+
+    <!-- GAME TAB -->
+    <section id="tab-game" class="tab-pane">
+      <div class="section-title">Game Library</div>
+      <input type="text" id="search-game" class="search-bar" placeholder="Search MOBA games...">
+      <div class="game-grid" id="game-list">
+        <!-- Games injected here via JS -->
+      </div>
+    </section>
+
+    <!-- SETTING TAB -->
+    <section id="tab-setting" class="tab-pane">
+      <div class="section-title">App Settings</div>
+      <div class="card info-list">
+        <div class="list-item">
+          <span>Animation Scale</span>
+          <select id="setting-anim-scale">
+            <option value="1">Normal (1.0x)</option>
+            <option value="1.5">Slow (1.5x)</option>
+            <option value="0.5">Fast (0.5x)</option>
+            <option value="0">Disabled (0x)</option>
+          </select>
+        </div>
+        <div class="list-item">
+          <span>Game Library Mode</span>
+          <select id="setting-lib">
+            <option value="all">Show All</option>
+            <option value="fav">Favorites Only</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title">About & Privacy</div>
+      <div class="card">
+        <p><strong>App Name:</strong> SHINZU PERFORMANCE Z</p>
+        <p><strong>Version:</strong> 2.0.0</p>
+        <p><strong>Developer:</strong> SHINZU</p>
+        <p class="disclaimer" style="margin-top:10px;">Disclaimer: This app is a visual performance dashboard. It does not modify system-level CPU or RAM allocations.</p>
+        <button class="btn btn-danger" id="btn-reset">Reset Settings</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- GAME DETAILS MODAL -->
+  <div id="game-modal" class="modal hidden">
+    <div class="modal-content card">
+      <h2 id="modal-title">Game Title</h2>
+      <p id="modal-desc">Description</p>
+      <div class="modal-stats">
+        <div><span>Recommended FPS</span> <strong id="modal-fps">60</strong></div>
+        <div><span>Profile</span> <strong id="modal-profile">Balanced</strong></div>
+      </div>
+      <div id="modal-compat" class="compat-box">Checking compatibility...</div>
+      <button class="btn btn-primary" id="btn-launch-game">LAUNCH GAME</button>
+      <button class="btn btn-outline" id="btn-modal-close">Close</button>
     </div>
   </div>
 
-  <!-- SEARCHING SCREEN -->
-  <div id="searchingScreen" class="screen">
-    <div class="searching-container">
-      <div class="spinner"></div>
-      <h2>Finding people…</h2>
-      <p class="searching-sub">Looking for available participants</p>
-      <button id="cancelSearchBtn" class="btn btn-secondary">Cancel</button>
-    </div>
-  </div>
+  <!-- BOTTOM NAVIGATION -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-target="tab-home">
+      <span class="icon">🏠</span><span class="label">Home</span>
+    </button>
+    <button class="nav-btn" data-target="tab-performance">
+      <span class="icon">⚡</span><span class="label">Performance</span>
+    </button>
+    <button class="nav-btn" data-target="tab-game">
+      <span class="icon">🎮</span><span class="label">Game</span>
+    </button>
+    <button class="nav-btn" data-target="tab-setting">
+      <span class="icon">⚙️</span><span class="label">Setting</span>
+    </button>
+  </nav>
 
-  <!-- CALL SCREEN -->
-  <div id="callScreen" class="screen">
-    <header class="call-header">
-      <div class="call-info">
-        <span id="roomLabel" class="room-label">Room</span>
-        <span id="participantCount" class="participant-count">0 / 10</span>
-      </div>
-      <div class="call-header-actions">
-        <button id="copyRoomLinkBtn" class="icon-btn" title="Copy room link">🔗</button>
-        <button id="toggleChatBtn" class="icon-btn" title="Toggle chat">💬</button>
-      </div>
-    </header>
-
-    <div id="videoGrid" class="video-grid"></div>
-
-    <aside id="chatPanel" class="chat-panel hidden">
-      <div class="chat-header">
-        <h3>Chat</h3>
-        <button id="closeChatBtn" class="icon-btn">✕</button>
-      </div>
-      <div id="chatMessages" class="chat-messages"></div>
-      <form id="chatForm" class="chat-form">
-        <input type="text" id="chatInput" placeholder="Type a message…" maxlength="200" autocomplete="off" />
-        <button type="submit" class="btn btn-primary">Send</button>
-      </form>
-    </aside>
-
-    <footer class="call-controls">
-      <button id="micToggleBtn" class="control-btn" title="Toggle microphone">🎤</button>
-      <button id="camToggleBtn" class="control-btn" title="Toggle camera">📷</button>
-      <button id="switchCameraBtn" class="control-btn" title="Switch camera">🔄</button>
-      <button id="fullscreenBtn" class="control-btn" title="Fullscreen">⛶</button>
-      <button id="leaveBtn" class="control-btn control-btn-danger" title="Leave call">✕</button>
-    </footer>
-  </div>
-
-  <div id="privacyModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Privacy Policy</h2>
-      <p>SHINZU MEET does not record or store your video/audio. All media streams are peer-to-peer via LiveKit SFU. Your display name is only shared inside the room you join. We do not collect personal information.</p>
-      <button id="closePrivacyBtn" class="btn btn-primary">Close</button>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
-  <script>
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('PWA Ready!'))
-        .catch(err => console.log('PWA Error', err));
-    }
-  </script>
+  <script src="app.js"></script>
 </body>
-</html>
+        </html>
